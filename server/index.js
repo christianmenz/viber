@@ -37,7 +37,10 @@ app.post('/api/logout', (_req, res) => {
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const distPath = path.resolve(__dirname, '../dist')
+const assetsPath = path.join(distPath, 'assets')
 
+app.use('/assets', express.static(assetsPath, { immutable: true, maxAge: '1y' }))
+app.use('/vite.svg', express.static(path.join(distPath, 'vite.svg')))
 app.use(express.static(distPath))
 
 app.use((req, res, next) => {
