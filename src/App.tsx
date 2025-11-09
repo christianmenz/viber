@@ -113,6 +113,18 @@ function App() {
     fetch('/api/logout', { method: 'POST' }).catch(() => {})
   }
 
+  const handleDownload = () => {
+    const blob = new Blob([codeDraft], { type: 'text/html' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'viber-playground.html'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -123,6 +135,9 @@ function App() {
         <div className="header-actions">
           <button type="button" className="ghost" onClick={handleResetWorkspace}>
             Arbeitsfläche zurücksetzen
+          </button>
+          <button type="button" className="ghost" onClick={handleDownload}>
+            HTML speichern
           </button>
           {isAuthenticated && (
             <button type="button" className="ghost" onClick={handleLogout}>
