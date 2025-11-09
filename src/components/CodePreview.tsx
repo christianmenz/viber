@@ -18,7 +18,7 @@ export function CodePreview({ draft, previewCode, onDraftChange, onRun, lastRunA
       <header className="panel__header">
         <div>
           <p className="eyebrow">Live-Vorschau</p>
-          <h2>Playground-Iframe</h2>
+          
         </div>
         <button type="button" onClick={onRun}>
           Code ausführen
