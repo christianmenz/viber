@@ -8,8 +8,8 @@ interface LoginModalProps {
 }
 
 export function LoginModal({ isLoading, error, onSubmit }: LoginModalProps) {
-  const [username, setUsername] = useState('fd25')
-  const [password, setPassword] = useState('fd25')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
