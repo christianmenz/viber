@@ -17,8 +17,7 @@ export function CodePreview({ draft, previewCode, onDraftChange, onRun, lastRunA
     <section className="panel code-panel">
       <header className="panel__header">
         <div>
-          <p className="eyebrow">Live-Vorschau</p>
-          
+          <p className="eyebrow">Live-Vorschau</p>          
         </div>
         <button type="button" onClick={onRun}>
           Code ausführen
