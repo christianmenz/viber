@@ -11,7 +11,7 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({ messages, isLoading, error, onSend, onClear }: ChatPanelProps) {
-  const [draft, setDraft] = useState('Beschreibe ein interaktives Future-Day-Erlebnis...')
+  const [draft, setDraft] = useState('Beschreibe ein knackiges Viber-Erlebnis...')
 
   const visibleMessages = useMemo(() => messages.filter((m) => m.role !== 'system'), [messages])
 

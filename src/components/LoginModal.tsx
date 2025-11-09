@@ -19,7 +19,7 @@ export function LoginModal({ isLoading, error, onSubmit }: LoginModalProps) {
   return (
     <div className="auth-overlay">
       <form className="auth-card" onSubmit={handleSubmit}>
-        <p className="eyebrow">Future Day Zugang</p>
+        <p className="eyebrow">Viber Zugang</p>
         <h2>Bitte einloggen</h2>
         <p className="auth-card__hint">
           Zum Schutz des API-Schlüssels brauchst du vor dem Prompten ein Passwort. Frag dein Coach-Team, wenn du

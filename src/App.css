@@ -313,11 +313,16 @@ input:focus {
   flex-direction: column;
 }
 
-.code-panel__editor textarea {
+.code-panel__editor .monaco-editor {
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  overflow: hidden;
   flex: 1;
-  min-height: 220px;
-  font-family: 'SFMono-Regular', Menlo, Consolas, monospace;
-  resize: none;
+  min-height: 260px;
+}
+
+.code-panel__editor .monaco-editor .overflow-guard {
+  border-radius: 18px;
 }
 
 .code-panel__hint {

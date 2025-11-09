@@ -1,3 +1,5 @@
+import Editor from '@monaco-editor/react'
+
 interface CodePreviewProps {
   draft: string
   previewCode: string
@@ -43,7 +45,21 @@ export function CodePreview({ draft, previewCode, onDraftChange, onRun, lastRunA
 
       {activeTab === 'code' ? (
         <div className="code-panel__editor">
-          <textarea value={draft} onChange={(event) => onDraftChange(event.target.value)} spellCheck={false} />
+          <Editor
+            height="100%"
+            defaultLanguage="html"
+            theme="vs-light"
+            value={draft}
+            onChange={(value) => onDraftChange(value ?? '')}
+            options={{
+              minimap: { enabled: false },
+              fontSize: 14,
+              wordWrap: 'on',
+              scrollBeyondLastLine: false,
+              automaticLayout: true,
+              tabSize: 2,
+            }}
+          />
           <p className="code-panel__hint">Bearbeite hier HTML/CSS/JS. Tippe auf Ausführen, um den Ergebnis-Tab zu aktualisieren.</p>
         </div>
       ) : (

@@ -28,7 +28,7 @@ export const STARTER_CODE = `<!DOCTYPE html>
 <html lang="de">
   <head>
     <meta charset="UTF-8" />
-    <title>Future-Day-Sandbox</title>
+    <title>Viber Lab</title>
     <style>
       body {
         font-family: 'Space Grotesk', sans-serif;
@@ -58,7 +58,7 @@ export const STARTER_CODE = `<!DOCTYPE html>
   </head>
   <body>
     <div class="card">
-      <h1>Starte deine Idee!</h1>
+      <h1>Willkommen bei Viber!</h1>
       <p>Bitte die KI, hier Code abzulegen, und klick anschließend auf \"Ausführen\".</p>
     </div>
   </body>

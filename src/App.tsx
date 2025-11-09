@@ -117,7 +117,7 @@ function App() {
     <div className="app-shell">
       <header className="app-header">
         <div>
-          <h1>Future-Day-Vibe-Coder</h1>
+          <h1>Viber Lab</h1>
           <p className="subtitle">{heroSubtitle}</p>
         </div>
         <div className="header-actions">
