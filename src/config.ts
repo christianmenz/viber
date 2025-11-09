@@ -7,6 +7,12 @@ export const STORAGE_KEYS = {
   azure: 'futureday25:azure',
 } as const
 
+const env = import.meta.env ?? {}
+
+const ENV_AZURE_ENDPOINT = env.AZURE_ENDPOINT as string | undefined
+const ENV_AZURE_DEPLOYMENT = env.AZURE_DEPLOYMENT as string | undefined
+const ENV_AZURE_API_VERSION = env.AZURE_API_VERSION as string | undefined
+
 export const DEFAULT_CHAT_START: ChatMessage[] = [
   {
     id: 'system-1',
@@ -18,9 +24,9 @@ export const DEFAULT_CHAT_START: ChatMessage[] = [
 ]
 
 export const DEFAULT_AZURE_CONFIG: AzureConfig = {
-  endpoint: 'https://swedencentral.api.cognitive.microsoft.com/',
-  deployment: 'fibu3-gpt5-prod',
-  apiVersion: '2025-01-01-preview',
+  endpoint: ENV_AZURE_ENDPOINT || 'https://swedencentral.api.cognitive.microsoft.com/',
+  deployment: ENV_AZURE_DEPLOYMENT || 'fibu3-gpt5-prod',
+  apiVersion: ENV_AZURE_API_VERSION || '2025-01-01-preview',
   apiKey: '',
 }
 
