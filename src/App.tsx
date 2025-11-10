@@ -96,7 +96,7 @@ function App() {
         setAuthError(payload?.error ?? 'Login fehlgeschlagen.')
         return
       }
-      setAzureConfig((prev) => ({ ...prev, apiKey: payload.apiKey }))
+      setAzureConfig((prev) => ({ ...prev, apiKey: 'authorized' }))
       setAuthError(null)
     } catch (loginError) {
       const message = loginError instanceof Error ? loginError.message : 'Login fehlgeschlagen.'

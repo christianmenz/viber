@@ -7,70 +7,34 @@ interface RequestParams {
 }
 
 export async function requestAiCode({ config, messages, signal }: RequestParams) {
-  if (!config.endpoint || !config.deployment || !config.apiKey) {
-    throw new Error('Trage Endpoint, Deployment und API-Schlüssel deiner Azure-OpenAI-Instanz ein, um Code zu erzeugen.')
-  }
-
-  const trimmedEndpoint = config.endpoint.replace(/\/$/, '')
-  const url = `${trimmedEndpoint}/openai/deployments/${config.deployment}/chat/completions?api-version=${config.apiVersion}`
-
-  const payload = {
-    messages: messages.map((message) => ({ role: message.role, content: message.content })),
-    max_completion_tokens: 16000,
-    response_format: { type: 'text' },
-  }
-
-  const response = await fetch(url, {
+  const response = await fetch('/api/generate', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'api-key': config.apiKey,
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      messages: messages.map((message) => ({ role: message.role, content: message.content })),
+      config: {
+        endpoint: config.endpoint,
+        deployment: config.deployment,
+        apiVersion: config.apiVersion,
+      },
+    }),
     signal,
   })
 
+  const data = await response.json()
   if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`Azure-OpenAI-Fehler ${response.status}: ${errorText}`)
+    const errorMessage = typeof data?.error === 'string' ? data.error : `Serverfehler ${response.status}`
+    throw new Error(errorMessage)
   }
 
-  const data = await response.json()
-  const choice = data?.choices?.[0]
-  const rawContent = choice?.message?.content
-  const reasoningContent = choice?.message?.reasoning_content
-  const content = normalizeContent(rawContent) ?? normalizeContent(reasoningContent)
-
+  const content: string | null | undefined = data?.content
   if (!content) {
-    if (choice?.finish_reason === 'length') {
-      throw new Error(
-        'Azure OpenAI hat die maximale Antwortlänge erreicht, bevor Code gesendet wurde. Bitte fordere eine kürzere Antwort an oder reduziere den gewünschten Detailgrad.'
-      )
-    }
-    throw new Error('Azure OpenAI hat eine leere Antwort geliefert. Verfeinere den Prompt oder prüfe den Deployment-Namen.')
+    throw new Error('Der Server hat keine ausführbare Antwort zurückgegeben.')
   }
 
   return content
-}
-
-type AzureContent = string | Array<{ type?: string; text?: string }>
-
-function normalizeContent(content: AzureContent | undefined): string | null {
-  if (!content) return null
-  if (typeof content === 'string') {
-    const trimmed = content.trim()
-    return trimmed.length > 0 ? trimmed : null
-  }
-
-  if (Array.isArray(content)) {
-    const combined = content
-      .map((chunk) => chunk?.text ?? '')
-      .join('\n')
-      .trim()
-    return combined.length > 0 ? combined : null
-  }
-
-  return null
 }
 
 export function extractRunnableCode(message: string) {
