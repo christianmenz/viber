@@ -1,8 +1,8 @@
-import type { AzureConfig, ChatMessage } from '../types'
+import type { AzureConfig, LlmMessage } from '../types'
 
 interface RequestParams {
   config: AzureConfig
-  messages: ChatMessage[]
+  messages: LlmMessage[]
   signal?: AbortSignal
 }
 

@@ -5,6 +5,7 @@ import { CodePreview } from './components/CodePreview'
 import { DEFAULT_AZURE_CONFIG, DEFAULT_CHAT_START, STARTER_CODE, STORAGE_KEYS } from './config'
 import { usePersistentState } from './hooks/usePersistentState'
 import { requestAiCode, extractRunnableCode } from './services/azureClient'
+import { buildRequestMessages } from './utils/chatContext'
 import type { AzureConfig, ChatMessage } from './types'
 import { LoginModal } from './components/LoginModal'
 
@@ -40,8 +41,10 @@ function App() {
     setIsLoading(true)
     setError(null)
 
+    const requestMessages = buildRequestMessages({ messages: updatedMessages, codeDraft, newPrompt: prompt })
+
     try {
-      const aiResponse = await requestAiCode({ config: azureConfig, messages: updatedMessages })
+      const aiResponse = await requestAiCode({ config: azureConfig, messages: requestMessages })
       const assistantMessage = createMessage('assistant', aiResponse)
       setMessages((prev) => [...prev, assistantMessage])
 

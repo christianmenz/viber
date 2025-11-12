@@ -7,6 +7,11 @@ export interface ChatMessage {
   createdAt: number
 }
 
+export interface LlmMessage {
+  role: Role
+  content: string
+}
+
 export interface AzureConfig {
   endpoint: string
   deployment: string
