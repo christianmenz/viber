@@ -57,7 +57,7 @@ app.post('/api/generate', async (req, res) => {
   const url = `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`
   const payload = {
     messages,
-    max_completion_tokens: 4096,
+    max_completion_tokens: 16000,
     response_format: { type: 'text' },
   }
 
