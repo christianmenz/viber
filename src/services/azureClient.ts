@@ -1,12 +1,11 @@
-import type { AzureConfig, LlmMessage } from '../types'
+import type { LlmMessage } from '../types'
 
 interface RequestParams {
-  config: AzureConfig
   messages: LlmMessage[]
   signal?: AbortSignal
 }
 
-export async function requestAiCode({ config, messages, signal }: RequestParams) {
+export async function requestAiCode({ messages, signal }: RequestParams) {
   const response = await fetch('/api/generate', {
     method: 'POST',
     headers: {
@@ -14,11 +13,6 @@ export async function requestAiCode({ config, messages, signal }: RequestParams)
     },
     body: JSON.stringify({
       messages: messages.map((message) => ({ role: message.role, content: message.content })),
-      config: {
-        endpoint: config.endpoint,
-        deployment: config.deployment,
-        apiVersion: config.apiVersion,
-      },
     }),
     signal,
   })

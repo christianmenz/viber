@@ -1,4 +1,5 @@
 import express from 'express'
+import { GAME_SYSTEM_PROMPT, SETTINGS_INSTRUCTIONS } from './gamePrompt.js'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import path from 'node:path'
@@ -11,9 +12,9 @@ const PORT = process.env.PORT || 4000
 const USERNAME = process.env.APP_LOGIN_USER || 'fd25'
 const PASSWORD = process.env.APP_LOGIN_PASSWORD || 'fd25'
 const apiKey = process.env.AZURE_OPENAI_API_KEY
-const AZURE_ENDPOINT = process.env.AZURE_OPENAI_ENDPOINT || 'https://swedencentral.api.cognitive.microsoft.com/'
-const AZURE_DEPLOYMENT = process.env.AZURE_OPENAI_DEPLOYMENT || 'fibu3-gpt5-prod'
-const AZURE_API_VERSION = process.env.AZURE_OPENAI_API_VERSION || '2025-01-01-preview'
+const AZURE_ENDPOINT = process.env.AZURE_OPENAI_ENDPOINT || 'https://eastus2.api.cognitive.microsoft.com/'
+const AZURE_DEPLOYMENT = process.env.AZURE_OPENAI_DEPLOYMENT || 'fibu3-gpt5.6-terra-prod'
+const AZURE_API_VERSION = process.env.AZURE_OPENAI_API_VERSION || '2024-12-01-preview'
 
 if (!apiKey) {
   console.warn('Warnung: AZURE_OPENAI_API_KEY ist nicht gesetzt. Login-Anfragen werden fehlschlagen.')
@@ -38,7 +39,7 @@ app.post('/api/logout', (_req, res) => {
 })
 
 app.post('/api/generate', async (req, res) => {
-  const { messages, config } = req.body || {}
+  const { messages } = req.body || {}
   if (!Array.isArray(messages)) {
     return res.status(400).json({ error: 'messages fehlt oder ist kein Array.' })
   }
@@ -46,9 +47,9 @@ app.post('/api/generate', async (req, res) => {
     return res.status(500).json({ error: 'Server hat keinen API-Schlüssel konfiguriert.' })
   }
 
-  const endpoint = ((config?.endpoint || AZURE_ENDPOINT).replace(/\/$/, '')) || ''
-  const deployment = config?.deployment || AZURE_DEPLOYMENT
-  const apiVersion = config?.apiVersion || AZURE_API_VERSION
+  const endpoint = AZURE_ENDPOINT.replace(/\/$/, '')
+  const deployment = AZURE_DEPLOYMENT
+  const apiVersion = AZURE_API_VERSION
 
   if (!endpoint || !deployment || !apiVersion) {
     return res.status(400).json({ error: 'Azure-Konfiguration ist unvollständig.' })
@@ -56,7 +57,10 @@ app.post('/api/generate', async (req, res) => {
 
   const url = `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`
   const payload = {
-    messages,
+    messages: [
+      { role: 'system', content: GAME_SYSTEM_PROMPT + SETTINGS_INSTRUCTIONS },
+      ...messages.filter((message) => ['user', 'assistant'].includes(message?.role) && typeof message.content === 'string'),
+    ],
     max_completion_tokens: 16000,
     response_format: { type: 'text' },
   }
@@ -69,6 +73,7 @@ app.post('/api/generate', async (req, res) => {
         'api-key': apiKey,
       },
       body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(180_000),
     })
 
     if (!response.ok) {
@@ -78,6 +83,9 @@ app.post('/api/generate', async (req, res) => {
 
     const data = await response.json()
     const choice = data?.choices?.[0]
+    if (choice?.finish_reason === 'length') {
+      return res.status(400).json({ error: 'Das Spiel war zu groß für eine Antwort. Bitte versuche eine kleinere Version mit weniger Funktionen.' })
+    }
     const content = normalizeContent(choice?.message?.content) ?? normalizeContent(choice?.message?.reasoning_content)
     if (!content) {
       const finishReason = choice?.finish_reason

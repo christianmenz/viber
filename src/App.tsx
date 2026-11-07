@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import './App.css'
+import { Brand } from './components/Brand'
+import { PixelIcon } from './components/PixelIcon'
 import { ChatPanel } from './components/ChatPanel'
 import { CodePreview } from './components/CodePreview'
 import { DEFAULT_AZURE_CONFIG, DEFAULT_CHAT_START, STARTER_CODE, STORAGE_KEYS } from './config'
@@ -24,7 +26,9 @@ function App() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [lastRunAt, setLastRunAt] = useState<number | null>(null)
-  const [activePreviewTab, setActivePreviewTab] = useState<'code' | 'preview'>('code')
+  const [activePreviewTab, setActivePreviewTab] = useState<'code' | 'preview' | 'simple'>('preview')
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [previousCode, setPreviousCode] = useState<string | null>(null)
   const [authError, setAuthError] = useState<string | null>(null)
   const [authLoading, setAuthLoading] = useState(false)
   const isAuthenticated = Boolean(azureConfig.apiKey)
@@ -44,13 +48,17 @@ function App() {
     const requestMessages = buildRequestMessages({ messages: updatedMessages, codeDraft, newPrompt: prompt })
 
     try {
-      const aiResponse = await requestAiCode({ config: azureConfig, messages: requestMessages })
+      const aiResponse = await requestAiCode({ messages: requestMessages })
       const assistantMessage = createMessage('assistant', aiResponse)
       setMessages((prev) => [...prev, assistantMessage])
 
       const extracted = extractRunnableCode(aiResponse)
       if (extracted) {
+        setPreviousCode(codeDraft)
         setCodeDraft(extracted)
+        setCodePreview(extracted)
+        setLastRunAt(Date.now())
+        setActivePreviewTab((tab) => tab === 'simple' ? 'simple' : 'preview')
       }
     } catch (caughtError) {
       const message = caughtError instanceof Error ? caughtError.message : 'Etwas ist schiefgelaufen.'
@@ -65,7 +73,7 @@ function App() {
   const handleRunCode = () => {
     setCodePreview(codeDraft)
     setLastRunAt(Date.now())
-    setActivePreviewTab('preview')
+    setActivePreviewTab((tab) => tab === 'simple' ? 'simple' : 'preview')
   }
 
   const resetWorkspaceState = () => {
@@ -73,17 +81,18 @@ function App() {
     setCodeDraft(STARTER_CODE)
     setCodePreview(STARTER_CODE)
     setLastRunAt(null)
-    setActivePreviewTab('code')
+    setActivePreviewTab('preview')
+    setPreviousCode(null)
     setError(null)
   }
 
   const handleResetWorkspace = () => {
-    if (!window.confirm('Sitzung wirklich zurücksetzen? Dein API-Schlüssel bleibt erhalten, alles andere wird gelöscht.')) {
+    if (!window.confirm('Arbeitsfläche wirklich zurücksetzen? Dein Spiel und Chat werden gelöscht. Du bleibst angemeldet.')) {
       return
     }
     resetWorkspaceState()
   }
-  const heroSubtitle = 'Baue direkt im Browser kleine HTML-, CSS- und JavaScript-Erlebnisse.'
+
 
   const handleLogin = async (username: string, password: string) => {
     setAuthLoading(true)
@@ -110,7 +119,6 @@ function App() {
   }
 
   const handleLogout = () => {
-    resetWorkspaceState()
     setAzureConfig(DEFAULT_AZURE_CONFIG)
     setAuthError(null)
     fetch('/api/logout', { method: 'POST' }).catch(() => {})
@@ -129,27 +137,25 @@ function App() {
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${isExpanded ? 'is-expanded' : ''}`}>
       <header className="app-header">
-        <div>
-          <h1>Viber Lab</h1>
-          <p className="subtitle">{heroSubtitle}</p>
-        </div>
+        <Brand />
         <div className="header-actions">
-          <button type="button" className="ghost" onClick={handleResetWorkspace}>
+          <button type="button" className="ghost" disabled={isLoading} onClick={handleResetWorkspace}>
             Arbeitsfläche zurücksetzen
           </button>
           <button type="button" className="ghost" onClick={handleDownload}>
-            HTML speichern
+            <PixelIcon name="heart" /> Spiel speichern
           </button>
           {isAuthenticated && (
-            <button type="button" className="ghost" onClick={handleLogout}>
+            <button type="button" className="ghost" disabled={isLoading} onClick={handleLogout}>
               Abmelden
             </button>
           )}
         </div>
       </header>
 
+      <div className="workshop-banner"><span><i /> DEINE SPIELEWERKSTATT</span><p>Erfinden. Bauen. Spielen. Repeat!</p><span className="banner-sparkles" aria-hidden="true">✦ + ✦</span></div>
       <main className="app-grid">
         <div className="stack">
           <ChatPanel
@@ -161,15 +167,36 @@ function App() {
           />
         </div>
         <CodePreview
+          isLoading={isLoading}
+          onApplySimpleCode={(nextCode) => {
+            setPreviousCode(codeDraft)
+            setCodeDraft(nextCode)
+            setCodePreview(nextCode)
+            setLastRunAt(Date.now())
+            setActivePreviewTab('simple')
+          }}
+          onEnableSettings={() => handleSendPrompt('Markiere in meinem Spiel kurze, echte Code-Stellen zum Selberprogrammieren: etwa Schießen, Bewegung, Punkte oder Aussehen. Erkläre jede Stelle kurz und kindgerecht. Behalte das Spiel und seine Regeln bei.')}
+          isExpanded={isExpanded}
+          onToggleExpand={() => setIsExpanded((value) => !value)}
           draft={codeDraft}
           previewCode={codePreview}
           onDraftChange={setCodeDraft}
+          canUndo={previousCode !== null && !isLoading}
+          onUndo={() => {
+            if (previousCode === null) return
+            setCodeDraft(previousCode)
+            setCodePreview(previousCode)
+            setPreviousCode(null)
+            setLastRunAt(Date.now())
+            setActivePreviewTab('preview')
+          }}
           onRun={handleRunCode}
           lastRunAt={lastRunAt}
           activeTab={activePreviewTab}
           onTabChange={setActivePreviewTab}
         />
       </main>
+      <footer className="app-footer"><span>MADE OF PIXELS & DEINEN IDEEN</span><span><PixelIcon name="star" /> Hier bist du der Game Creator.</span></footer>
       {!isAuthenticated && (
         <LoginModal isLoading={authLoading} error={authError} onSubmit={handleLogin} />
       )}

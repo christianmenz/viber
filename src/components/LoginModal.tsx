@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Brand } from './Brand'
 import type { FormEvent } from 'react'
 
 interface LoginModalProps {
@@ -19,11 +20,10 @@ export function LoginModal({ isLoading, error, onSubmit }: LoginModalProps) {
   return (
     <div className="auth-overlay">
       <form className="auth-card" onSubmit={handleSubmit}>
-        <p className="eyebrow">Viber Zugang</p>
-        <h2>Bitte einloggen</h2>
+        <Brand compact /><p className="eyebrow">PLAYER ONE • BEREIT?</p>
+        <h2>Dein Abenteuer startet hier.</h2>
         <p className="auth-card__hint">
-          Zum Schutz des API-Schlüssels brauchst du vor dem Prompten ein Passwort. Frag dein Coach-Team, wenn du
-          keines hast.
+          Mit deinem Werkstatt-Zugang geht es los. Dein gespeichertes Spiel bleibt beim Abmelden erhalten.
         </p>
 
         <label>
@@ -44,7 +44,7 @@ export function LoginModal({ isLoading, error, onSubmit }: LoginModalProps) {
         {error && <p className="error-banner">{error}</p>}
 
         <button type="submit" disabled={isLoading}>
-          {isLoading ? 'Prüfe Zugang...' : 'Anmelden'}
+          {isLoading ? 'Prüfe Zugang...' : 'LET’S PLAY →'}
         </button>
       </form>
     </div>

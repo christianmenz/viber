@@ -13,20 +13,12 @@ const ENV_AZURE_ENDPOINT = env.AZURE_ENDPOINT as string | undefined
 const ENV_AZURE_DEPLOYMENT = env.AZURE_DEPLOYMENT as string | undefined
 const ENV_AZURE_API_VERSION = env.AZURE_API_VERSION as string | undefined
 
-export const DEFAULT_CHAT_START: ChatMessage[] = [
-  {
-    id: 'system-1',
-    role: 'system',
-    content:
-      'Du bist ein freundlicher KI-Coding-Buddy für 10- bis 15-Jährige. Erstelle lauffähiges HTML, CSS und JS in einem einzigen HTML-Dokument, das direkt in einem iframe läuft. Halte alles möglichst schlicht und kurz: wenig CSS, keine schweren Frameworks und nur Animationen, wenn ausdrücklich gewünscht.',
-    createdAt: Date.now(),
-  },
-]
+export const DEFAULT_CHAT_START: ChatMessage[] = []
 
 export const DEFAULT_AZURE_CONFIG: AzureConfig = {
-  endpoint: ENV_AZURE_ENDPOINT || 'https://swedencentral.api.cognitive.microsoft.com/',
-  deployment: ENV_AZURE_DEPLOYMENT || 'fibu3-gpt5-prod',
-  apiVersion: ENV_AZURE_API_VERSION || '2025-01-01-preview',
+  endpoint: ENV_AZURE_ENDPOINT || 'https://eastus2.api.cognitive.microsoft.com/',
+  deployment: ENV_AZURE_DEPLOYMENT || 'fibu3-gpt5.6-terra-prod',
+  apiVersion: ENV_AZURE_API_VERSION || '2024-12-01-preview',
   apiKey: '',
 }
 
@@ -37,7 +29,7 @@ export const STARTER_CODE = `<!DOCTYPE html>
     <title>Viber Lab</title>
     <style>
       body {
-        font-family: 'Space Grotesk', sans-serif;
+        font-family: system-ui, sans-serif;
         background: radial-gradient(circle at top, #f8f1ff, #f0fbff);
         min-height: 100vh;
         margin: 0;
@@ -46,7 +38,9 @@ export const STARTER_CODE = `<!DOCTYPE html>
       }
       .card {
         background: white;
-        padding: 3rem;
+        padding: clamp(1.5rem, 5vw, 3rem);
+        margin: 1rem;
+        max-width: 34rem;
         border-radius: 24px;
         box-shadow: 0 20px 80px rgba(15, 23, 42, 0.15);
         text-align: center;
@@ -64,8 +58,8 @@ export const STARTER_CODE = `<!DOCTYPE html>
   </head>
   <body>
     <div class="card">
-      <h1>Willkommen bei Viber!</h1>
-      <p>Bitte die KI, hier Code abzulegen, und klick anschließend auf \"Ausführen\".</p>
+      <h1>🎮 Willkommen in deiner Spielhalle!</h1>
+      <p>Erfinde links ein Spiel. Dein KI-Buddy baut es für dich – und hier kannst du sofort losspielen.</p>
     </div>
   </body>
 </html>`
