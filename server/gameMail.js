@@ -1,4 +1,4 @@
-import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
+import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 import nodemailer from 'nodemailer'
 
 const SESSION_COOKIE = 'viber_mail_session'
@@ -13,9 +13,15 @@ export function createGameMail(env, password) {
   const user = env.SMTP_USER?.trim()
   const pass = env.SMTP_PASSWORD
   const from = env.SMTP_FROM?.trim()
+  const relayUrl = env.MAIL_RELAY_URL?.trim()
+  const relayToken = env.MAIL_RELAY_TOKEN
+  const accessCode = env.MAIL_ACCESS_CODE
+  const relayEnabled = Boolean(relayUrl?.startsWith('https://') && relayToken && accessCode && pass && from && ADDRESS.test(from))
   const configured = host && user && pass && from && ADDRESS.test(from)
     && Number.isInteger(port) && port > 0 && port <= 65535
-  const transport = configured && password !== 'fd25' ? nodemailer.createTransport({
+  const localOnly = env.APP_HOST === '127.0.0.1' && env.RENDER !== 'true'
+  const transport = relayEnabled ? nodemailer.createTransport({ streamTransport: true, buffer: true, newline: 'windows' })
+    : configured && (localOnly || password !== 'fd25') ? nodemailer.createTransport({
     host, port, secure, requireTLS: !secure,
     auth: { user, pass },
     connectionTimeout: 10_000,
@@ -26,7 +32,7 @@ export function createGameMail(env, password) {
   }) : null
 
   if (host && !transport) {
-    console.warn('SMTP is disabled. Check the SMTP settings and set a non-default APP_LOGIN_PASSWORD.')
+    console.warn('SMTP is disabled. Check the SMTP settings. Use APP_HOST=127.0.0.1 locally or set a non-default APP_LOGIN_PASSWORD.')
   }
 
   const secret = randomBytes(32)
@@ -65,7 +71,13 @@ export function createGameMail(env, password) {
     if (!hasSession(req)) {
       return res.status(401).json({ error: 'Bitte melde dich erneut an, um ein Spiel per E-Mail zu senden.' })
     }
-    const { to, name, html } = req.body ?? {}
+    const { to, name, html, mailCode } = req.body ?? {}
+    if (relayEnabled) {
+      const digest = (value) => createHash('sha256').update(value).digest()
+      if (typeof mailCode !== 'string' || mailCode.length > 128 || !timingSafeEqual(digest(mailCode), digest(accessCode))) {
+        return res.status(403).json({ codeRequired: true, error: 'Gib den Versandcode ein.' })
+      }
+    }
     if (typeof to !== 'string' || to.length > 254 || !ADDRESS.test(to)
       || typeof name !== 'string' || !name.trim() || name.length > 100 || /[\r\n]/.test(name)
       || typeof html !== 'string' || !html.trim() || Buffer.byteLength(html) > MAX_GAME_BYTES) {
@@ -84,9 +96,20 @@ export function createGameMail(env, password) {
         to: { name: '', address: to },
         subject: 'Viber-Spiel: ' + name,
         text: 'Im Anhang findest du das Spiel „' + name + '“. Speichere die HTML-Datei und öffne sie im Browser.',
-        attachments: [{ filename: filename + '.html', content: html, contentType: 'text/html; charset=utf-8' }],
+        attachments: [{ filename: filename + '.html', content: html, contentType: 'text/html; charset=utf-8', contentTransferEncoding: 'base64' }],
       })
-      if (!result.accepted.length) throw new Error('Recipient rejected')
+      if (relayEnabled) {
+        const response = await fetch(relayUrl, {
+          method: 'POST',
+          headers: { 'X-Viber-Relay-Token': relayToken, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to, password: pass, message: result.message.toString('utf8') }),
+          signal: AbortSignal.timeout(22_000),
+          redirect: 'error',
+        })
+        if (!response.ok || (await response.json()).ok !== true) throw new Error('Mail relay rejected the message')
+      } else if (!result.accepted.length) {
+        throw new Error('Recipient rejected')
+      }
       return res.json({ success: true })
     } catch (error) {
       console.error('SMTP delivery failed', error.code ?? error.name)

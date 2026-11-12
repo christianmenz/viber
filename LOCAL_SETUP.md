@@ -30,6 +30,8 @@ The original login design is unchanged: login checks credentials, but `/api/gene
 
 Trage den SMTP-Ausgangsserver aus dem hosttech-Zugangsdatenblatt als `SMTP_HOST` und den Postfach-Login als `SMTP_USER` und `SMTP_PASSWORD` ein. `SMTP_FROM` ist die Absenderadresse dieses Postfachs. Für Port 587 wird STARTTLS verlangt (`SMTP_SECURE=false`). Für Port 465 verwende `SMTP_SECURE=true`.
 
-Setze `APP_LOGIN_PASSWORD` auf ein privates, vom Standard abweichendes Passwort. Starte den Server neu und melde dich in Viber erneut an. In der Spielebibliothek öffnet „Per E-Mail senden“ ein Formular für die Empfängeradresse. Die E-Mail enthält das gespeicherte HTML-Spiel als Anhang.
+Setze lokal `APP_HOST=127.0.0.1`, um den Server auf diesen Rechner zu beschränken. Bei einem öffentlich erreichbaren Server ist ein privates, vom Standard abweichendes `APP_LOGIN_PASSWORD` erforderlich. Starte den Server neu und melde dich in Viber erneut an. In der Spielebibliothek öffnet „Per E-Mail senden“ ein Formular für die Empfängeradresse. Die E-Mail enthält das gespeicherte HTML-Spiel als Anhang.
 
 Auf einem gehosteten Server gehören dieselben Werte in die Server-Umgebung. [Render Free blockiert ausgehendes SMTP auf Ports 25, 465 und 587](https://render.com/docs/free#free-web-services). Für hosttech-SMTP auf Render ist eine kostenpflichtige Instanz erforderlich.
+
+Auf Render Free kann Viber stattdessen per HTTPS an das Relay auf dem Hosttech-Webhosting senden. Die Vorlage liegt unter `deploy/viber-mail-relay.php`. Setze darin den SHA-256-Hash eines zufälligen 32-Byte-Tokens (64 Hex-Zeichen). Hinterlege in Render die HTTPS-Adresse als `MAIL_RELAY_URL`, das Token als `MAIL_RELAY_TOKEN` und einen separaten privaten `MAIL_ACCESS_CODE` für den Versanddialog. Das Relay nutzt das bestehende `SMTP_PASSWORD` und verschickt über das in der Vorlage hinterlegte Hosttech-Postfach. Teile den Versandcode nur mit Personen, die Spiele per E-Mail verschicken dürfen.

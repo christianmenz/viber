@@ -1,4 +1,5 @@
 import express from 'express'
+import { createChat } from './chat.js'
 import { GAME_SYSTEM_PROMPT, SETTINGS_INSTRUCTIONS } from './gamePrompt.js'
 import { createGameMail } from './gameMail.js'
 import cors from 'cors'
@@ -10,6 +11,7 @@ dotenv.config()
 
 const app = express()
 const PORT = process.env.PORT || 4000
+const HOST = process.env.APP_HOST || undefined
 const USERNAME = process.env.APP_LOGIN_USER || 'fd25'
 const PASSWORD = process.env.APP_LOGIN_PASSWORD || 'fd25'
 const gameMail = createGameMail(process.env, PASSWORD)
@@ -18,12 +20,18 @@ const AZURE_ENDPOINT = process.env.AZURE_OPENAI_ENDPOINT || 'https://eastus2.api
 const AZURE_DEPLOYMENT = process.env.AZURE_OPENAI_DEPLOYMENT || 'fibu3-gpt5.6-terra-prod'
 const AZURE_API_VERSION = process.env.AZURE_OPENAI_API_VERSION || '2024-12-01-preview'
 
+const chat = createChat({
+  apiKey, endpoint: AZURE_ENDPOINT, deployment: AZURE_DEPLOYMENT,
+  apiVersion: AZURE_API_VERSION, secure: process.env.RENDER === 'true',
+})
+
 if (!apiKey) {
   console.warn('Warnung: AZURE_OPENAI_API_KEY ist nicht gesetzt. Login-Anfragen werden fehlschlagen.')
 }
 
 app.use(cors())
 app.post('/api/email/game', express.json({ limit: '1mb' }), gameMail.send)
+app.use('/api/chat', chat.router)
 app.use(express.json())
 
 app.post('/api/login', (req, res) => {
@@ -35,11 +43,13 @@ app.post('/api/login', (req, res) => {
     return res.status(500).json({ error: 'Server hat keinen API-Schlüssel konfiguriert.' })
   }
   gameMail.openSession(req, res)
+  chat.openSession(req, res)
   res.json({ success: true })
 })
 
 app.post('/api/logout', (req, res) => {
   gameMail.closeSession(req, res)
+  chat.closeSession(req, res)
   res.json({ success: true })
 })
 
@@ -140,6 +150,6 @@ app.use((req, res, next) => {
   res.sendFile(path.join(distPath, 'index.html'))
 })
 
-app.listen(PORT, () => {
+app.listen(PORT, HOST, () => {
   console.log(`App läuft auf Port ${PORT}`)
 })

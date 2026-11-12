@@ -44,6 +44,8 @@ export function GameLibrary({ mode, activeGameId, workspace, onSave, onLoad, onN
   const [saved, setSaved] = useState(false)
   const [emailGame, setEmailGame] = useState<SavedGame | null>(null)
   const [recipient, setRecipient] = useState('')
+  const [mailCode, setMailCode] = useState('')
+  const [codeRequired, setCodeRequired] = useState(false)
   const [sending, setSending] = useState(false)
   const [mailError, setMailError] = useState<string | null>(null)
   const [mailStatus, setMailStatus] = useState<string | null>(null)
@@ -102,10 +104,11 @@ export function GameLibrary({ mode, activeGameId, workspace, onSave, onLoad, onN
       const response = await fetch('/api/email/game', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: recipient.trim(), name: emailGame.name, html: emailGame.draft }),
+        body: JSON.stringify({ to: recipient.trim(), name: emailGame.name, html: emailGame.draft, mailCode: mailCode.trim() }),
       })
       if (!response.ok) {
         const payload = await response.json().catch(() => null)
+        if (payload?.codeRequired) setCodeRequired(true)
         throw new Error(payload?.error ?? 'Die E-Mail konnte nicht gesendet werden.')
       }
       setMailStatus('Der Mailserver hat die E-Mail angenommen.')
@@ -144,6 +147,13 @@ export function GameLibrary({ mode, activeGameId, workspace, onSave, onLoad, onN
             <input autoFocus type="email" autoComplete="email" required maxLength={254} value={recipient}
               disabled={sending} onChange={(event) => setRecipient(event.target.value)} />
           </label>
+          {codeRequired && (
+            <label>
+              Versandcode
+              <input type="password" autoComplete="off" value={mailCode} disabled={sending}
+                required maxLength={128} onChange={(event) => setMailCode(event.target.value)} />
+            </label>
+          )}
           {mailError && <p className="error-banner" role="alert">{mailError}</p>}
           <div className="game-library__actions" style={{ marginTop: 16 }}>
             <button type="submit" disabled={sending || !recipient.trim()}>{sending ? 'Wird gesendet …' : 'E-Mail senden'}</button>
