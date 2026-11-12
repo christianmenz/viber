@@ -42,6 +42,11 @@ export function GameLibrary({ mode, activeGameId, workspace, onSave, onLoad, onN
   const [name, setName] = useState(() => games.find((game) => game.id === activeGameId)?.name ?? '')
   const [error, setError] = useState<string | null>(initial.error)
   const [saved, setSaved] = useState(false)
+  const [emailGame, setEmailGame] = useState<SavedGame | null>(null)
+  const [recipient, setRecipient] = useState('')
+  const [sending, setSending] = useState(false)
+  const [mailError, setMailError] = useState<string | null>(null)
+  const [mailStatus, setMailStatus] = useState<string | null>(null)
   const activeGame = games.find((game) => game.id === activeGameId)
   const isSaving = mode === 'save' || mode === 'save-new'
 
@@ -81,6 +86,37 @@ export function GameLibrary({ mode, activeGameId, workspace, onSave, onLoad, onN
     onLoad(game)
   }
 
+  function openEmail(game: SavedGame) {
+    setEmailGame(game)
+    setRecipient('')
+    setMailError(null)
+    setMailStatus(null)
+  }
+
+  async function sendEmail(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!emailGame || sending) return
+    setSending(true)
+    setMailError(null)
+    try {
+      const response = await fetch('/api/email/game', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: recipient.trim(), name: emailGame.name, html: emailGame.draft }),
+      })
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null)
+        throw new Error(payload?.error ?? 'Die E-Mail konnte nicht gesendet werden.')
+      }
+      setMailStatus('Der Mailserver hat die E-Mail angenommen.')
+      setEmailGame(null)
+    } catch (error) {
+      setMailError(error instanceof Error ? error.message : 'Die E-Mail konnte nicht gesendet werden.')
+    } finally {
+      setSending(false)
+    }
+  }
+
   return (
     <dialog
       ref={dialogRef}
@@ -88,15 +124,32 @@ export function GameLibrary({ mode, activeGameId, workspace, onSave, onLoad, onN
       aria-labelledby="game-dialog-title"
       onCancel={(event) => {
         event.preventDefault()
-        onClose()
+        if (sending) return
+        if (emailGame) setEmailGame(null)
+        else onClose()
       }}
     >
       <div className="game-dialog__header">
-        <h2 id="game-dialog-title">{isSaving ? 'Spiel speichern' : mode === 'new' ? 'Neues Spiel' : 'Spielebibliothek'}</h2>
-        <button type="button" className="ghost" onClick={onClose}>{mode === 'new' || mode === 'save-new' ? 'Abbrechen' : 'Schließen'}</button>
+        <h2 id="game-dialog-title">{emailGame ? 'Spiel per E-Mail senden' : isSaving ? 'Spiel speichern' : mode === 'new' ? 'Neues Spiel' : 'Spielebibliothek'}</h2>
+        <button type="button" className="ghost" disabled={sending} onClick={() => emailGame ? setEmailGame(null) : onClose()}>
+          {emailGame ? 'Zurück' : mode === 'new' || mode === 'save-new' ? 'Abbrechen' : 'Schließen'}
+        </button>
       </div>
       {error && <p className="error-banner" role="alert">{error}</p>}
-      {mode === 'new' ? (
+      {emailGame ? (
+        <form onSubmit={sendEmail}>
+          <p>„{emailGame.name}“ wird als HTML-Datei angehängt.</p>
+          <label>
+            E-Mail-Adresse
+            <input autoFocus type="email" autoComplete="email" required maxLength={254} value={recipient}
+              disabled={sending} onChange={(event) => setRecipient(event.target.value)} />
+          </label>
+          {mailError && <p className="error-banner" role="alert">{mailError}</p>}
+          <div className="game-library__actions" style={{ marginTop: 16 }}>
+            <button type="submit" disabled={sending || !recipient.trim()}>{sending ? 'Wird gesendet …' : 'E-Mail senden'}</button>
+          </div>
+        </form>
+      ) : mode === 'new' ? (
         <>
           <p>Dein aktuelles Spiel hat ungespeicherte Änderungen. Möchtest du es speichern, bevor du ein neues startest?</p>
           <div className="game-library__actions">
@@ -116,6 +169,7 @@ export function GameLibrary({ mode, activeGameId, workspace, onSave, onLoad, onN
       ) : (
         <>
           {saved && <p role="status">Spiel gespeichert.</p>}
+          {mailStatus && <p role="status">{mailStatus}</p>}
           {games.length > 0 ? (
             <ul className="game-library">
               {games.map((game) => (
@@ -127,6 +181,7 @@ export function GameLibrary({ mode, activeGameId, workspace, onSave, onLoad, onN
                   <div className="game-library__actions">
                     <button type="button" onClick={() => loadGame(game)} aria-label={game.name + ' laden'}>Laden</button>
                     <button type="button" className="ghost" onClick={() => downloadGame(game)} aria-label={game.name + ' herunterladen'}>HTML herunterladen</button>
+                    <button type="button" className="ghost" onClick={() => openEmail(game)} aria-label={game.name + ' per E-Mail senden'}>Per E-Mail senden</button>
                   </div>
                 </li>
               ))}

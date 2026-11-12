@@ -1,5 +1,6 @@
 import express from 'express'
 import { GAME_SYSTEM_PROMPT, SETTINGS_INSTRUCTIONS } from './gamePrompt.js'
+import { createGameMail } from './gameMail.js'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import path from 'node:path'
@@ -11,6 +12,7 @@ const app = express()
 const PORT = process.env.PORT || 4000
 const USERNAME = process.env.APP_LOGIN_USER || 'fd25'
 const PASSWORD = process.env.APP_LOGIN_PASSWORD || 'fd25'
+const gameMail = createGameMail(process.env, PASSWORD)
 const apiKey = process.env.AZURE_OPENAI_API_KEY
 const AZURE_ENDPOINT = process.env.AZURE_OPENAI_ENDPOINT || 'https://eastus2.api.cognitive.microsoft.com/'
 const AZURE_DEPLOYMENT = process.env.AZURE_OPENAI_DEPLOYMENT || 'fibu3-gpt5.6-terra-prod'
@@ -21,6 +23,7 @@ if (!apiKey) {
 }
 
 app.use(cors())
+app.post('/api/email/game', express.json({ limit: '1mb' }), gameMail.send)
 app.use(express.json())
 
 app.post('/api/login', (req, res) => {
@@ -31,10 +34,12 @@ app.post('/api/login', (req, res) => {
   if (!apiKey) {
     return res.status(500).json({ error: 'Server hat keinen API-Schlüssel konfiguriert.' })
   }
+  gameMail.openSession(req, res)
   res.json({ success: true })
 })
 
-app.post('/api/logout', (_req, res) => {
+app.post('/api/logout', (req, res) => {
+  gameMail.closeSession(req, res)
   res.json({ success: true })
 })
 

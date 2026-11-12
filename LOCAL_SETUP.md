@@ -25,3 +25,11 @@ Selected existing Foundry deployment: `fibu3-gpt5.6-terra-prod` (`gpt-5.6-terra`
 - `npm test`, `npm run lint`, and `npm run build` validate the implementation.
 
 The original login design is unchanged: login checks credentials, but `/api/generate` has no server-side login/session check. Do not treat the login screen as access control for a publicly exposed service.
+
+## Spiel per E-Mail senden
+
+Trage den SMTP-Ausgangsserver aus dem hosttech-Zugangsdatenblatt als `SMTP_HOST` und den Postfach-Login als `SMTP_USER` und `SMTP_PASSWORD` ein. `SMTP_FROM` ist die Absenderadresse dieses Postfachs. Für Port 587 wird STARTTLS verlangt (`SMTP_SECURE=false`). Für Port 465 verwende `SMTP_SECURE=true`.
+
+Setze `APP_LOGIN_PASSWORD` auf ein privates, vom Standard abweichendes Passwort. Starte den Server neu und melde dich in Viber erneut an. In der Spielebibliothek öffnet „Per E-Mail senden“ ein Formular für die Empfängeradresse. Die E-Mail enthält das gespeicherte HTML-Spiel als Anhang.
+
+Auf einem gehosteten Server gehören dieselben Werte in die Server-Umgebung. [Render Free blockiert ausgehendes SMTP auf Ports 25, 465 und 587](https://render.com/docs/free#free-web-services). Für hosttech-SMTP auf Render ist eine kostenpflichtige Instanz erforderlich.
