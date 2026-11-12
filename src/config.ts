@@ -5,6 +5,8 @@ export const STORAGE_KEYS = {
   draft: 'futureday25:draft',
   preview: 'futureday25:preview',
   azure: 'futureday25:azure',
+  games: 'futureday25:games',
+  activeGame: 'futureday25:activeGame',
 } as const
 
 const env = import.meta.env ?? {}

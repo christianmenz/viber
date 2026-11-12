@@ -7,6 +7,15 @@ export interface ChatMessage {
   createdAt: number
 }
 
+export interface SavedGame {
+  id: string
+  name: string
+  updatedAt: number
+  draft: string
+  preview: string
+  messages: ChatMessage[]
+}
+
 export interface LlmMessage {
   role: Role
   content: string

@@ -302,3 +302,24 @@ button.code-panel__tab.is-active { background: var(--yellow); color: var(--ink);
 .snippet-error { color: #ffb5b1; font-size: 11px; margin: 6px 0; }
 @media (min-width: 851px) and (max-height: 800px) { .snippet-note { display: none; } .snippet-hint { font-size: 11px; line-height: 1.4; margin: 7px 0; } .simple-code h3 { display: none; } .simple-code .eyebrow { margin-bottom: 8px; } }
 @media (max-width: 850px) { .simple-code { width: 100%; flex: 0 0 auto; max-height: none; min-height: 400px; } .snippet-monaco { height: 220px; flex: 0 0 220px; } }
+
+.game-dialog {
+  width: min(650px, calc(100% - 36px));
+  max-height: calc(100% - 36px);
+  padding: clamp(16px, 4vw, 28px);
+  border: var(--outline);
+  background: var(--cream);
+  color: var(--ink);
+  box-shadow: 6px 6px 0 #8e6ad8;
+}
+.game-dialog::backdrop { background: #141324df; backdrop-filter: blur(4px); }
+.game-dialog__header, .game-library li { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.game-dialog h2 { margin: 0; font-size: 24px; }
+.game-dialog form { margin-top: 18px; }
+.game-dialog label { display: grid; gap: 6px; font-weight: 900; }
+.game-dialog p, .game-library small { color: var(--muted); }
+.game-library { list-style: none; padding: 0; margin: 16px 0 0; }
+.game-library li { padding: 12px 0; border-top: 2px dashed #ded6cb; }
+.game-library strong { display: block; overflow-wrap: anywhere; }
+.game-library__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.game-library__actions button { font-size: 12px; padding: 7px 10px; }

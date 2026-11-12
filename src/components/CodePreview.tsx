@@ -61,7 +61,7 @@ export function CodePreview({ draft, previewCode, onDraftChange, onRun, lastRunA
         </div>
         </div>
       )}
-      <p className="code-panel__hint storage-hint"><PixelIcon name="heart" /> Dein Spiel bleibt in diesem Browser. Mit „Spiel speichern“ nimmst du es mit.</p>
+      <p className="code-panel__hint storage-hint"><PixelIcon name="heart" /> Gespeicherte Spiele findest du in der Spielebibliothek.</p>
     </section>
   )
 }

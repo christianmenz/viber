@@ -8,8 +8,10 @@ import { DEFAULT_AZURE_CONFIG, DEFAULT_CHAT_START, STARTER_CODE, STORAGE_KEYS } 
 import { usePersistentState } from './hooks/usePersistentState'
 import { requestAiCode, extractRunnableCode } from './services/azureClient'
 import { buildRequestMessages } from './utils/chatContext'
-import type { AzureConfig, ChatMessage } from './types'
+import { hasWorkspaceChanges, readGames } from './utils/gameLibrary'
+import type { AzureConfig, ChatMessage, SavedGame } from './types'
 import { LoginModal } from './components/LoginModal'
+import { GameLibrary } from './components/GameLibrary'
 
 const createMessage = (role: ChatMessage['role'], content: string): ChatMessage => ({
   id: crypto.randomUUID?.() ?? `${role}-${Date.now()}`,
@@ -31,7 +33,11 @@ function App() {
   const [previousCode, setPreviousCode] = useState<string | null>(null)
   const [authError, setAuthError] = useState<string | null>(null)
   const [authLoading, setAuthLoading] = useState(false)
+  const [activeGameId, setActiveGameId] = usePersistentState<string | null>(STORAGE_KEYS.activeGame, null)
+  const [gameDialog, setGameDialog] = useState<'save' | 'library' | 'new' | 'save-new' | null>(null)
+  const [workspaceVersion, setWorkspaceVersion] = useState(0)
   const isAuthenticated = Boolean(azureConfig.apiKey)
+  const workspace = { draft: codeDraft, preview: codePreview, messages }
 
   const handleSendPrompt = async (prompt: string) => {
     if (!isAuthenticated) {
@@ -76,7 +82,7 @@ function App() {
     setActivePreviewTab((tab) => tab === 'simple' ? 'simple' : 'preview')
   }
 
-  const resetWorkspaceState = () => {
+  const startNewGame = () => {
     setMessages(DEFAULT_CHAT_START)
     setCodeDraft(STARTER_CODE)
     setCodePreview(STARTER_CODE)
@@ -84,13 +90,22 @@ function App() {
     setActivePreviewTab('preview')
     setPreviousCode(null)
     setError(null)
+    setActiveGameId(null)
+    setWorkspaceVersion((version) => version + 1)
+    setGameDialog(null)
   }
 
-  const handleResetWorkspace = () => {
-    if (!window.confirm('Arbeitsfläche wirklich zurücksetzen? Dein Spiel und Chat werden gelöscht. Du bleibst angemeldet.')) {
-      return
+  const handleNewGame = () => {
+    try {
+      const saved = readGames().find((game) => game.id === activeGameId)
+      if (!hasWorkspaceChanges(workspace, saved)) {
+        startNewGame()
+        return
+      }
+    } catch {
+      // Keep the current workspace available when the library cannot be read.
     }
-    resetWorkspaceState()
+    setGameDialog('new')
   }
 
 
@@ -124,16 +139,17 @@ function App() {
     fetch('/api/logout', { method: 'POST' }).catch(() => {})
   }
 
-  const handleDownload = () => {
-    const blob = new Blob([codeDraft], { type: 'text/html' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = 'viber-playground.html'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
+  const handleLoadGame = (game: SavedGame) => {
+    setActiveGameId(game.id)
+    setMessages(game.messages)
+    setCodeDraft(game.draft)
+    setCodePreview(game.preview)
+    setPreviousCode(null)
+    setError(null)
+    setLastRunAt(null)
+    setActivePreviewTab('preview')
+    setWorkspaceVersion((version) => version + 1)
+    setGameDialog(null)
   }
 
   return (
@@ -141,11 +157,14 @@ function App() {
       <header className="app-header">
         <Brand />
         <div className="header-actions">
-          <button type="button" className="ghost" disabled={isLoading} onClick={handleResetWorkspace}>
-            Arbeitsfläche zurücksetzen
+          <button type="button" className="ghost" disabled={isLoading} onClick={handleNewGame}>
+            Neues Spiel
           </button>
-          <button type="button" className="ghost" onClick={handleDownload}>
+          <button type="button" className="ghost" disabled={isLoading} onClick={() => setGameDialog('save')}>
             <PixelIcon name="heart" /> Spiel speichern
+          </button>
+          <button type="button" className="ghost" disabled={isLoading} onClick={() => setGameDialog('library')}>
+            Spielebibliothek
           </button>
           {isAuthenticated && (
             <button type="button" className="ghost" disabled={isLoading} onClick={handleLogout}>
@@ -159,6 +178,7 @@ function App() {
       <main className="app-grid">
         <div className="stack">
           <ChatPanel
+            key={workspaceVersion}
             messages={messages}
             isLoading={isLoading}
             error={error}
@@ -167,6 +187,7 @@ function App() {
           />
         </div>
         <CodePreview
+          key={workspaceVersion}
           isLoading={isLoading}
           onApplySimpleCode={(nextCode) => {
             setPreviousCode(codeDraft)
@@ -197,6 +218,22 @@ function App() {
         />
       </main>
       <footer className="app-footer"><span>MADE OF PIXELS & DEINEN IDEEN</span><span><PixelIcon name="star" /> Hier bist du der Game Creator.</span></footer>
+      {gameDialog && (
+        <GameLibrary
+          key={gameDialog === 'save-new' ? 'save-new' : 'library-dialog'}
+          mode={gameDialog}
+          activeGameId={activeGameId}
+          workspace={workspace}
+          onSave={(id) => {
+            setActiveGameId(id)
+            setGameDialog('library')
+          }}
+          onLoad={handleLoadGame}
+          onNew={startNewGame}
+          onSaveBeforeNew={() => setGameDialog('save-new')}
+          onClose={() => setGameDialog(null)}
+        />
+      )}
       {!isAuthenticated && (
         <LoginModal isLoading={authLoading} error={authError} onSubmit={handleLogin} />
       )}
