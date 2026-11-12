@@ -1,4 +1,4 @@
-import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
+import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto'
 import nodemailer from 'nodemailer'
 
 const SESSION_COOKIE = 'viber_mail_session'
@@ -15,8 +15,7 @@ export function createGameMail(env, password) {
   const from = env.SMTP_FROM?.trim()
   const relayUrl = env.MAIL_RELAY_URL?.trim()
   const relayToken = env.MAIL_RELAY_TOKEN
-  const accessCode = env.MAIL_ACCESS_CODE
-  const relayEnabled = Boolean(relayUrl?.startsWith('https://') && relayToken && accessCode && pass && from && ADDRESS.test(from))
+  const relayEnabled = Boolean(relayUrl?.startsWith('https://') && relayToken && pass && from && ADDRESS.test(from))
   const configured = host && user && pass && from && ADDRESS.test(from)
     && Number.isInteger(port) && port > 0 && port <= 65535
   const localOnly = env.APP_HOST === '127.0.0.1' && env.RENDER !== 'true'
@@ -71,13 +70,7 @@ export function createGameMail(env, password) {
     if (!hasSession(req)) {
       return res.status(401).json({ error: 'Bitte melde dich erneut an, um ein Spiel per E-Mail zu senden.' })
     }
-    const { to, name, html, mailCode } = req.body ?? {}
-    if (relayEnabled) {
-      const digest = (value) => createHash('sha256').update(value).digest()
-      if (typeof mailCode !== 'string' || mailCode.length > 128 || !timingSafeEqual(digest(mailCode), digest(accessCode))) {
-        return res.status(403).json({ codeRequired: true, error: 'Gib den Versandcode ein.' })
-      }
-    }
+    const { to, name, html } = req.body ?? {}
     if (typeof to !== 'string' || to.length > 254 || !ADDRESS.test(to)
       || typeof name !== 'string' || !name.trim() || name.length > 100 || /[\r\n]/.test(name)
       || typeof html !== 'string' || !html.trim() || Buffer.byteLength(html) > MAX_GAME_BYTES) {
