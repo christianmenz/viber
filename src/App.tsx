@@ -12,6 +12,7 @@ import { hasWorkspaceChanges, readGames } from './utils/gameLibrary'
 import type { AzureConfig, ChatMessage, SavedGame } from './types'
 import { LoginModal } from './components/LoginModal'
 import { GameLibrary } from './components/GameLibrary'
+import { GeneralChat } from './components/GeneralChat'
 
 const createMessage = (role: ChatMessage['role'], content: string): ChatMessage => ({
   id: crypto.randomUUID?.() ?? `${role}-${Date.now()}`,
@@ -166,6 +167,7 @@ function App() {
           <button type="button" className="ghost" disabled={isLoading} onClick={() => setGameDialog('library')}>
             Spielebibliothek
           </button>
+          {isAuthenticated && <GeneralChat onSignInAgain={handleLogout} />}
           {isAuthenticated && (
             <button type="button" className="ghost" disabled={isLoading} onClick={handleLogout}>
               Abmelden

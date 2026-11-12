@@ -1,0 +1,44 @@
+.general-chat {
+  width: min(760px, calc(100% - 24px));
+  max-height: calc(100dvh - 24px);
+  padding: 0;
+  border: 2px solid #1f1b2c;
+  border-radius: 16px;
+  background: #fffcf7;
+  color: #1f1b2c;
+}
+.general-chat::backdrop { background: rgb(18 13 34 / 72%); }
+.general-chat__body {
+  height: min(720px, calc(100dvh - 30px));
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+.general-chat header, .general-chat form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+}
+.general-chat header { border-bottom: 1px solid #ddd5e5; }
+.general-chat h2 { margin: 0 auto 0 0; font-size: 20px; }
+.general-chat form { border-top: 1px solid #ddd5e5; }
+.general-chat textarea { min-width: 0; max-height: 25dvh; resize: vertical; border-radius: 12px; }
+.general-chat__thread {
+  overflow: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+.general-chat__welcome { margin: auto; text-align: center; font-size: clamp(20px, 5vw, 30px); font-weight: 900; }
+.general-chat__turn { width: fit-content; max-width: 100%; line-height: 1.55; }
+.general-chat__turn > div { white-space: pre-wrap; overflow-wrap: anywhere; }
+.general-chat__turn strong { display: block; margin-bottom: 4px; }
+.general-chat__turn--user {
+  align-self: flex-end;
+  max-width: 86%;
+  padding: 8px 14px;
+  border-radius: 14px;
+  background: #eee5fc;
+}
